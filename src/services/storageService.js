@@ -75,11 +75,8 @@ export const storageService = {
 
   getMyPeerId() {
     try {
-      // Для peerId используем sessionStorage, чтобы у каждой вкладки был свой ID
-      if (typeof sessionStorage !== 'undefined') {
-        return sessionStorage.getItem(PEER_ID_KEY)
-      }
-      // Fallback на localStorage (на случай очень старых браузеров)
+      // Используем localStorage для сохранения peerId между сессиями
+      // Это позволяет сохранять чаты и сообщения при перезагрузке страницы
       return localStorage.getItem(PEER_ID_KEY)
     } catch (error) {
       console.error('Error loading peer ID:', error)
@@ -89,12 +86,7 @@ export const storageService = {
 
   saveMyPeerId(peerId) {
     try {
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem(PEER_ID_KEY, peerId)
-      } else {
-        // Fallback, если нет sessionStorage
-        localStorage.setItem(PEER_ID_KEY, peerId)
-      }
+      localStorage.setItem(PEER_ID_KEY, peerId)
     } catch (error) {
       console.error('Error saving peer ID:', error)
     }

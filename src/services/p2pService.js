@@ -220,6 +220,7 @@ class P2PService {
               senderId: m.senderPeerId,
               senderName: m.senderName,
               id: m.id,
+              timestamp: m.timestamp,
               isGroup: m.isGroup,
               groupName: m.groupName,
               participants: m.participants,
@@ -247,6 +248,7 @@ class P2PService {
             senderId: payload.senderId,
             senderName: payload.senderName,
             id: payload.id,
+            timestamp: payload.timestamp,
             attachment: payload.attachment
           }
         })
@@ -290,30 +292,43 @@ class P2PService {
       senderId: this.myPeerId,
       senderName: message.senderName || null,
       id: message.id,
+      timestamp: message.timestamp || Date.now(),
       attachment: message.attachment,
       chatId: conn.chatId
     }
 
+    // Пробуем отправить через WebRTC, если соединение установлено
     if (conn.connected && conn.peer) {
-      return this.sendViaWebRTC(peerId, payload)
+      const sent = this.sendViaWebRTC(peerId, payload)
+      if (sent) {
+        return true
+      }
+      // Если WebRTC не сработал, продолжаем через signaling
     }
 
+    // Отправляем через signaling сервер (более надёжно)
     if (USE_WEBRTC && this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({
-        type: 'direct_message',
-        targetPeerId: peerId,
-        chatId: conn.chatId,
-        payload: {
-          text: payload.text,
-          senderId: payload.senderId,
-          senderName: payload.senderName,
-          id: payload.id,
-          attachment: payload.attachment
-        }
-      }))
-      return true
+      try {
+        this.ws.send(JSON.stringify({
+          type: 'direct_message',
+          targetPeerId: peerId,
+          chatId: conn.chatId,
+          payload: {
+            text: payload.text,
+            senderId: payload.senderId,
+            senderName: payload.senderName,
+            id: payload.id,
+            timestamp: payload.timestamp,
+            attachment: payload.attachment
+          }
+        }))
+        return true
+      } catch (e) {
+        console.warn('Failed to send via signaling:', e)
+      }
     }
 
+    // Fallback на localStorage (для локальной разработки)
     const key = `p2p_message_${Date.now()}_${Math.random()}`
     const data = {
       senderPeerId: this.myPeerId,
@@ -323,14 +338,15 @@ class P2PService {
       senderId: payload.senderId,
       senderName: payload.senderName,
       id: payload.id,
+      timestamp: payload.timestamp,
       attachment: payload.attachment
     }
     try {
       localStorage.setItem(key, JSON.stringify(data))
+      return true
     } catch (e) {
       return false
     }
-    return true
   }
 
   sendGroupMessage(groupId, groupName, participants, message) {
@@ -342,6 +358,7 @@ class P2PService {
       senderId: this.myPeerId,
       senderName: message.senderName || null,
       id: message.id,
+      timestamp: message.timestamp || Date.now(),
       attachment: message.attachment,
       chatId: groupId,
       isGroup: true,

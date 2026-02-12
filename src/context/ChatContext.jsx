@@ -70,7 +70,7 @@ export const ChatProvider = ({ children }) => {
       text: message.text || '',
       senderId: message.senderId,
       senderName: message.senderName || null,
-      timestamp: Date.now(),
+      timestamp: message.timestamp || Date.now(),
       isOwn: false,
       attachment: message.attachment || null
     }
@@ -397,6 +397,7 @@ export const ChatProvider = ({ children }) => {
         senderName,
         text: text || '',
         senderId: myPeerId,
+        timestamp: message.timestamp,
         createdBy: chat.createdBy,
         admins: chat.admins || [],
         attachment: attachment || null
@@ -408,6 +409,7 @@ export const ChatProvider = ({ children }) => {
         text: text || '',
         senderId: myPeerId,
         senderName,
+        timestamp: message.timestamp,
         attachment: attachment || null
       })
     }
