@@ -8,7 +8,16 @@ const WebSocket = require('ws')
 const http = require('http')
 
 const PORT = process.env.PORT || 3005
-const server = http.createServer()
+const server = http.createServer((req, res) => {
+  // Обработка HTTP запросов для проверки здоровья сервера
+  if (req.url === '/health' || req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ status: 'ok', service: 'stork-signaling' }))
+  } else {
+    res.writeHead(404)
+    res.end('Not found')
+  }
+})
 
 const wss = new WebSocket.Server({ server })
 
@@ -113,6 +122,7 @@ wss.on('connection', (ws, req) => {
   })
 })
 
-server.listen(PORT, () => {
-  console.log(`Signaling server: ws://localhost:${PORT}`)
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Signaling server: ws://0.0.0.0:${PORT}`)
+  console.log(`Health check: http://0.0.0.0:${PORT}/health`)
 })

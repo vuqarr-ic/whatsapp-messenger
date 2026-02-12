@@ -6,7 +6,10 @@
 
 const getSignalingUrl = () => {
   const url = import.meta.env.VITE_SIGNALING_URL
-  if (url) return url
+  if (url) {
+    // Убираем слэш в конце, если есть
+    return url.replace(/\/$/, '')
+  }
   const host = window.location.hostname
   const port = import.meta.env.VITE_SIGNALING_PORT || 3005
   if (host === 'localhost' || host === '127.0.0.1') {
