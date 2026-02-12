@@ -1,0 +1,251 @@
+.group-manage-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.group-manage-panel {
+  background-color: #ffffff;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.group-manage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e9edef;
+}
+
+.group-manage-header h2 {
+  font-size: 20px;
+  font-weight: 500;
+  color: #111b21;
+}
+
+.group-manage-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #54656f;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.group-manage-close:hover {
+  background-color: #f0f2f5;
+}
+
+.group-manage-name {
+  padding: 12px 20px;
+  font-weight: 500;
+  color: #111b21;
+  background-color: #f0f2f5;
+}
+
+.group-manage-add {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e9edef;
+}
+
+.group-manage-add input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #e9edef;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.group-manage-add input:focus {
+  outline: none;
+  border-color: #25d366;
+}
+
+.group-manage-add button {
+  padding: 10px 16px;
+  background-color: #25d366;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.group-manage-add button:hover:not(:disabled) {
+  background-color: #20ba5a;
+}
+
+.group-manage-add button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.group-manage-error {
+  padding: 8px 20px;
+  font-size: 13px;
+  color: #e74c3c;
+}
+
+.group-manage-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 20px;
+}
+
+.group-manage-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.group-manage-item:last-child {
+  border-bottom: none;
+}
+
+.group-manage-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.group-manage-peer {
+  font-size: 12px;
+  color: #111b21;
+  word-break: break-all;
+  background: none;
+  padding: 0;
+}
+
+.group-manage-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.badge.me {
+  background-color: #25d366;
+  color: white;
+}
+
+.badge.creator {
+  background-color: #667eea;
+  color: white;
+}
+
+.badge.admin {
+  background-color: #f0f2f5;
+  color: #54656f;
+}
+
+.group-manage-item-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.btn-admin {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  opacity: 0.8;
+}
+
+.btn-admin:hover {
+  opacity: 1;
+}
+
+.btn-remove {
+  padding: 6px 12px;
+  font-size: 12px;
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-remove:hover {
+  background-color: #fecaca;
+}
+
+.group-manage-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid #e9edef;
+  background-color: #f0f2f5;
+  border-radius: 0 0 8px 8px;
+}
+
+.group-manage-footer span {
+  font-size: 13px;
+  color: #54656f;
+}
+
+.btn-done {
+  padding: 12px 24px;
+  background-color: #25d366;
+  color: white;
+  border: none;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-done:hover {
+  background-color: #20ba5a;
+}

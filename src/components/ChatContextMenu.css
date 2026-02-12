@@ -1,0 +1,142 @@
+.chat-context-menu {
+  position: fixed;
+  z-index: 1000;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  padding: 6px 0;
+  min-width: 180px;
+}
+
+.chat-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 14px;
+  color: #111b21;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.chat-context-menu button:hover {
+  background-color: #f0f2f5;
+}
+
+.chat-context-menu button.context-menu-delete {
+  color: #dc2626;
+}
+
+.chat-context-menu button.context-menu-delete:hover {
+  background-color: #fee2e2;
+}
+
+.context-menu-rename {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.context-menu-rename input {
+  padding: 8px 12px;
+  border: 1px solid #e9edef;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.context-menu-rename input:focus {
+  outline: none;
+  border-color: #25d366;
+}
+
+.context-menu-rename button {
+  padding: 8px;
+  background-color: #25d366;
+  color: white;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.context-menu-rename button:hover {
+  background-color: #20ba5a;
+}
+
+.chat-id-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+}
+
+.chat-id-modal {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.chat-id-modal h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #111b21;
+}
+
+.chat-id-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  background-color: #f0f2f5;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0 0 16px 0;
+  max-height: 300px;
+}
+
+.chat-id-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.chat-id-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.chat-id-actions button:first-child {
+  background-color: #25d366;
+  color: white;
+}
+
+.chat-id-actions button:first-child:hover {
+  background-color: #20ba5a;
+}
+
+.chat-id-actions button:last-child {
+  background-color: #e9edef;
+  color: #111b21;
+}
+
+.chat-id-actions button:last-child:hover {
+  background-color: #d1d7db;
+}
