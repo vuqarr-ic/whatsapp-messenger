@@ -366,9 +366,27 @@ export const ChatProvider = ({ children }) => {
 
   const sendMessage = (chatId, text, attachment) => {
     const chat = chats.find(c => c.id === chatId)
-    if (!chat || !chat.isConnected) {
+    if (!chat) {
+      alert('Чат не найден.')
+      return
+    }
+    // Разрешаем отправку, если есть подключение к signaling серверу, даже без WebRTC
+    const isSignalingConnected = p2pService.isSignalingConnected?.() || false
+    if (!chat.isConnected && !isSignalingConnected) {
       alert('Чат не подключен. Дождитесь подключения.')
       return
+    }
+    // Если чат не помечен как подключенный, но signaling работает - обновляем статус
+    if (!chat.isConnected && isSignalingConnected) {
+      setChats(prevChats => {
+        const updated = prevChats.map(c =>
+          c.id === chatId ? { ...c, isConnected: true } : c
+        )
+        if (myPeerId) {
+          storageService.saveChats(myPeerId, updated)
+        }
+        return updated
+      })
     }
 
     const messageId = Date.now().toString() + '_' + Math.random().toString(36).slice(2, 8)

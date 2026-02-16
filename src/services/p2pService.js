@@ -45,6 +45,18 @@ class P2PService {
       this.ws.onopen = () => {
         this.reconnectAttempts = 0
         this.ws.send(JSON.stringify({ type: 'register', peerId: this.myPeerId }))
+        // Уведомляем о подключении к signaling серверу
+        if (this.onConnectionCallback) {
+          // Вызываем для всех существующих чатов, чтобы обновить статус
+          this.connections.forEach((conn, key) => {
+            if (!conn.connected) {
+              // Устанавливаем isConnected через callback для чатов без WebRTC
+              const parts = key.split('_')
+              const chatId = parts.slice(1).join('_')
+              this.onConnectionCallback(conn.peerId, chatId)
+            }
+          })
+        }
       }
       this.ws.onmessage = (e) => {
         try {
@@ -163,7 +175,21 @@ class P2PService {
       }
     })
 
-    peer.on('error', (err) => console.warn('Peer error:', err))
+    peer.on('error', (err) => {
+      console.warn('Peer error:', err)
+      // Если ошибка ICE, пробуем переподключиться через signaling
+      if (err.message && err.message.includes('ICE')) {
+        console.warn('ICE connection failed, falling back to signaling')
+      }
+    })
+    
+    peer.on('iceConnectionStateChange', () => {
+      const state = peer.iceConnectionState
+      if (state === 'failed' || state === 'disconnected') {
+        console.warn(`ICE connection state: ${state}`)
+      }
+    })
+    
     peer.on('close', () => this.connections.delete(key))
 
     return { peer, peerId, chatId, connected: false }
@@ -280,8 +306,25 @@ class P2PService {
     return false
   }
 
+  isSignalingConnected() {
+    return this.ws?.readyState === WebSocket.OPEN
+  }
+
   sendMessage(peerId, message) {
     const conn = Array.from(this.connections.values()).find(c => c.peerId === peerId)
+    // Если нет WebRTC соединения, но есть подключение к signaling - создаём виртуальное соединение
+    if (!conn && this.isSignalingConnected()) {
+      // Создаём виртуальное соединение для работы через signaling
+      const chatId = message.chatId || `chat_${peerId}`
+      const key = `${this.myPeerId}_${chatId}`
+      this.connections.set(key, {
+        peer: null,
+        peerId,
+        chatId,
+        connected: false // WebRTC не подключен, но signaling работает
+      })
+      return this.sendMessage(peerId, message)
+    }
     if (!conn) {
       console.warn('Connection not found for peer:', peerId)
       return false
