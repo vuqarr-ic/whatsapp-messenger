@@ -1,0 +1,18 @@
+# Заголовки для Netlify (альтернатива netlify.toml)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+  Accept-Ranges: bytes
+  Connection: keep-alive
+
+/*.js
+  Content-Type: application/javascript; charset=utf-8
+  Cache-Control: public, max-age=31536000, immutable
+  Accept-Ranges: bytes
+  Connection: keep-alive
+
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff

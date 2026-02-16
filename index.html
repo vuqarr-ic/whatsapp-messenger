@@ -4,10 +4,48 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- Оптимизация для мобильных -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>STORK</title>
+    <!-- Preconnect для ускорения загрузки -->
+    <link rel="preconnect" href="https://storksms.netlify.app" crossorigin />
+    <link rel="dns-prefetch" href="https://storksms.netlify.app" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <!-- Fallback для проблем с загрузкой -->
+    <script>
+      // Retry логика для загрузки модулей на мобильных
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          // Предзагрузка критических ресурсов
+          const preloadLinks = document.querySelectorAll('link[rel="preload"]');
+          preloadLinks.forEach(link => {
+            const newLink = document.createElement('link');
+            newLink.rel = 'prefetch';
+            newLink.href = link.href;
+            document.head.appendChild(newLink);
+          });
+        });
+      }
+      
+      // Обработка ошибок загрузки
+      window.addEventListener('error', (e) => {
+        if (e.target && e.target.tagName === 'SCRIPT' && e.target.src) {
+          console.warn('Script load error, retrying...', e.target.src);
+          // Retry через 2 секунды
+          setTimeout(() => {
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = e.target.src;
+            script.onerror = () => console.error('Retry failed for:', e.target.src);
+            document.head.appendChild(script);
+          }, 2000);
+        }
+      }, true);
+    </script>
   </body>
 </html>

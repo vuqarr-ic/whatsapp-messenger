@@ -1,0 +1,49 @@
+# Конфигурация Netlify для STORK
+
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+# Настройки для статических файлов
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    # Добавляем заголовки для лучшей работы на мобильных
+    Accept-Ranges = "bytes"
+    Connection = "keep-alive"
+
+# Настройки для HTML
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+
+# Настройки для JavaScript
+[[headers]]
+  for = "/assets/*.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+    Cache-Control = "public, max-age=31536000, immutable"
+    # Важно для мобильных устройств
+    Accept-Ranges = "bytes"
+    Connection = "keep-alive"
+
+# Настройки для CSS
+[[headers]]
+  for = "/assets/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Редиректы для SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Настройки для WebSocket (если используется)
+[build.environment]
+  NODE_VERSION = "20"
