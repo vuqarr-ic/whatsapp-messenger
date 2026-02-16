@@ -1,0 +1,182 @@
+===========================================
+КОМАНДЫ ДЛЯ РАЗВЕРТЫВАНИЯ STORK
+Скопируйте и выполните по порядку на сервере
+===========================================
+
+1. ОБНОВЛЕНИЕ СИСТЕМЫ
+----------------------
+apt update && apt upgrade -y
+
+
+2. УСТАНОВКА NODE.JS
+---------------------
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+node --version
+
+
+3. УСТАНОВКА GIT И NGINX
+-------------------------
+apt-get install -y git nginx
+
+
+4. УСТАНОВКА PM2
+-----------------
+npm install -g pm2
+
+
+5. ЗАГРУЗКА ПРОЕКТА (выберите один вариант)
+--------------------------------------------
+
+ВАРИАНТ A: Через Git (если код на GitHub)
+git clone https://github.com/ВАШ_НИК/stork-messenger.git
+cd stork-messenger
+
+ВАРИАНТ B: Через SCP (если код локально)
+На вашем компьютере выполните:
+scp -r c:\Users\masimov\whatsapp-messenger root@ВАШ_IP:/root/
+
+
+6. УСТАНОВКА ЗАВИСИМОСТЕЙ
+---------------------------
+cd /root/whatsapp-messenger
+npm install
+
+
+7. ЗАПУСК SIGNALING СЕРВЕРА
+-----------------------------
+cd server
+pm2 start index.js --name stork-signaling
+pm2 save
+pm2 startup
+# Выполните команду, которую покажет PM2
+
+
+8. ПРОВЕРКА РАБОТЫ СЕРВЕРА
+----------------------------
+pm2 status
+pm2 logs stork-signaling
+
+
+9. НАСТРОЙКА NGINX (создайте файл)
+-----------------------------------
+nano /etc/nginx/sites-available/stork
+
+Вставьте следующее (замените ВАШ_ДОМЕН.ru):
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
+server {
+    listen 80;
+    server_name ВАШ_ДОМЕН.ru;
+
+    location / {
+        proxy_pass http://localhost:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_connect_timeout 7d;
+        proxy_send_timeout 7d;
+        proxy_read_timeout 7d;
+    }
+}
+
+Сохраните: Ctrl+O, Enter, Ctrl+X
+
+
+10. ВКЛЮЧЕНИЕ САЙТА В NGINX
+-----------------------------
+ln -s /etc/nginx/sites-available/stork /etc/nginx/sites-enabled/
+rm /etc/nginx/sites-enabled/default
+nginx -t
+systemctl restart nginx
+
+
+11. УСТАНОВКА SSL (LET'S ENCRYPT)
+----------------------------------
+apt-get install -y certbot python3-certbot-nginx
+certbot --nginx -d ВАШ_ДОМЕН.ru
+
+
+12. НАСТРОЙКА ФРОНТЕНДА
+-----------------------
+cd /root/whatsapp-messenger
+nano .env
+
+Добавьте:
+VITE_SIGNALING_URL=wss://ВАШ_ДОМЕН.ru
+VITE_USE_WEBRTC=false
+
+Сохраните: Ctrl+O, Enter, Ctrl+X
+
+
+13. СБОРКА ФРОНТЕНДА
+---------------------
+npm run build
+
+
+14. НАСТРОЙКА NGINX ДЛЯ ФРОНТЕНДА
+----------------------------------
+nano /etc/nginx/sites-available/stork-frontend
+
+Вставьте (замените app.ВАШ_ДОМЕН.ru):
+
+server {
+    listen 80;
+    server_name app.ВАШ_ДОМЕН.ru;
+
+    root /root/whatsapp-messenger/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+
+Сохраните: Ctrl+O, Enter, Ctrl+X
+
+Включите:
+ln -s /etc/nginx/sites-available/stork-frontend /etc/nginx/sites-enabled/
+certbot --nginx -d app.ВАШ_ДОМЕН.ru
+systemctl restart nginx
+
+
+15. ПРОВЕРКА РАБОТЫ
+-------------------
+pm2 status
+pm2 logs stork-signaling
+nginx -t
+
+
+===========================================
+ПОЛЕЗНЫЕ КОМАНДЫ
+===========================================
+
+Просмотр логов:
+pm2 logs stork-signaling
+
+Перезапуск сервера:
+pm2 restart stork-signaling
+
+Остановка сервера:
+pm2 stop stork-signaling
+
+Проверка портов:
+netstat -tulpn | grep 3005
+
+Проверка Nginx:
+nginx -t
+systemctl status nginx
+
+Просмотр логов Nginx:
+tail -f /var/log/nginx/error.log
+
+===========================================
