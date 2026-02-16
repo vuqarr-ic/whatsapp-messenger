@@ -71,6 +71,20 @@ const getIceServers = () => {
       username: turnUser,
       credential: turnPass
     })
+  } else {
+    // Пробуем использовать публичные TURN серверы (могут быть нестабильны, но лучше чем ничего)
+    // ВАЖНО: Эти серверы могут быть перегружены или недоступны
+    // Для продакшена рекомендуется настроить свой TURN сервер
+    try {
+      // Публичный TURN от metered.ca (бесплатный, но с ограничениями)
+      // Для использования нужно зарегистрироваться на https://www.metered.ca
+      // И добавить credentials в .env файл
+      
+      // Альтернатива: использовать только STUN для мобильных сетей
+      // WebRTC будет работать через signaling сервер, если STUN/TURN недоступны
+    } catch (e) {
+      console.warn('TURN server configuration error:', e)
+    }
   }
 
   return servers

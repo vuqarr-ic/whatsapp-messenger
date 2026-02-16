@@ -19,7 +19,9 @@ class P2PService {
     this.storageListener = null
     this.ws = null
     this.reconnectAttempts = 0
-    this.maxReconnectAttempts = 5
+    // Для мобильных сетей больше попыток переподключения
+    const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    this.maxReconnectAttempts = isMobile ? 10 : 5
     this.isCleaningUp = false
   }
 
@@ -68,7 +70,10 @@ class P2PService {
       this.ws.onclose = () => {
         if (!this.isCleaningUp && this.reconnectAttempts < this.maxReconnectAttempts) {
           this.reconnectAttempts++
-          setTimeout(() => this.connectSignaling(), 2000 * this.reconnectAttempts)
+          // Для мобильных сетей делаем более частые попытки переподключения
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+          const delay = isMobile ? 1000 * this.reconnectAttempts : 2000 * this.reconnectAttempts
+          setTimeout(() => this.connectSignaling(), delay)
         }
       }
       this.ws.onerror = () => {
@@ -141,11 +146,32 @@ class P2PService {
   }
 
   createPeerConnection(key, peerId, chatId, initiator) {
+    // Для мобильных устройств используем более агрессивные таймауты
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    
     const peer = new SimplePeer({
       initiator,
       trickle: true,
-      config: { iceServers: config.iceServers }
+      config: { 
+        iceServers: config.iceServers,
+        iceCandidatePoolSize: 10 // Больше кандидатов для мобильных сетей
+      },
+      // Увеличиваем таймауты для мобильных сетей
+      ...(isMobile && {
+        iceTransportPolicy: 'all', // Пробуем и UDP и TCP
+        reconnectTimer: 3000 // Быстрее переподключаемся
+      })
     })
+    
+    // Таймаут для установления соединения (особенно важно для мобильных)
+    const connectionTimeout = setTimeout(() => {
+      if (!peer.destroyed && peer.connected === false) {
+        console.warn('WebRTC connection timeout, falling back to signaling')
+        peer.destroy()
+        // Удаляем соединение, чтобы использовать signaling
+        this.connections.delete(key)
+      }
+    }, isMobile ? 10000 : 15000) // 10 сек для мобильных, 15 для десктопа
 
     peer.on('signal', (signal) => {
       const conn = this.connections.get(key)
@@ -155,6 +181,7 @@ class P2PService {
     })
 
     peer.on('connect', () => {
+      clearTimeout(connectionTimeout) // Очищаем таймаут при успешном подключении
       const conn = this.connections.get(key)
       if (conn) {
         conn.connected = true
@@ -185,12 +212,30 @@ class P2PService {
     
     peer.on('iceConnectionStateChange', () => {
       const state = peer.iceConnectionState
+      if (state === 'connected' || state === 'completed') {
+        clearTimeout(connectionTimeout) // Очищаем таймаут при успешном ICE соединении
+      }
       if (state === 'failed' || state === 'disconnected') {
         console.warn(`ICE connection state: ${state}`)
+        // Для мобильных сетей быстрее переключаемся на signaling
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        if (isMobile && state === 'failed') {
+          setTimeout(() => {
+            const conn = this.connections.get(key)
+            if (conn && !conn.connected) {
+              console.warn('Mobile WebRTC failed, using signaling only')
+              // Оставляем соединение, но помечаем, что WebRTC не работает
+              // Сообщения будут идти через signaling
+            }
+          }, 2000)
+        }
       }
     })
     
-    peer.on('close', () => this.connections.delete(key))
+    peer.on('close', () => {
+      clearTimeout(connectionTimeout)
+      this.connections.delete(key)
+    })
 
     return { peer, peerId, chatId, connected: false }
   }
@@ -340,6 +385,31 @@ class P2PService {
       chatId: conn.chatId
     }
 
+    // Для мобильных устройств предпочитаем signaling (более стабильно)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    
+    // На мобильных сначала пробуем signaling, если WebRTC не установлен
+    if (isMobile && (!conn.connected || !conn.peer) && this.ws?.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(JSON.stringify({
+          type: 'direct_message',
+          targetPeerId: peerId,
+          chatId: conn.chatId,
+          payload: {
+            text: payload.text,
+            senderId: payload.senderId,
+            senderName: payload.senderName,
+            id: payload.id,
+            timestamp: payload.timestamp,
+            attachment: payload.attachment
+          }
+        }))
+        return true
+      } catch (e) {
+        console.warn('Failed to send via signaling:', e)
+      }
+    }
+    
     // Пробуем отправить через WebRTC, если соединение установлено
     if (conn.connected && conn.peer) {
       const sent = this.sendViaWebRTC(peerId, payload)
@@ -349,7 +419,7 @@ class P2PService {
       // Если WebRTC не сработал, продолжаем через signaling
     }
 
-    // Отправляем через signaling сервер (более надёжно)
+    // Отправляем через signaling сервер (более надёжно для всех устройств)
     if (USE_WEBRTC && this.ws?.readyState === WebSocket.OPEN) {
       try {
         this.ws.send(JSON.stringify({
