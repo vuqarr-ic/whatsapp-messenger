@@ -35,10 +35,9 @@ class P2PService {
     this.isCleaningUp = false
 
     this.setupStorageListener()
-    if (USE_WEBRTC) {
-      this.connectSignaling()
-    }
-    console.log('P2P Service initialized, Peer ID:', myPeerId, USE_WEBRTC ? '(WebRTC)' : '(local)')
+    // Signaling всегда подключается (нужен для доставки сообщений)
+    this.connectSignaling()
+    console.log('P2P Service initialized, Peer ID:', myPeerId, USE_WEBRTC ? '(WebRTC + Signaling)' : '(Signaling only)')
   }
 
   connectSignaling() {
@@ -129,6 +128,11 @@ class P2PService {
   }
 
   handlePeerSignal(fromPeerId, signal, chatId, targetPeerId = null) {
+    // Если WebRTC отключен, игнорируем сигналы WebRTC
+    if (!USE_WEBRTC) {
+      return
+    }
+    
     const key = chatId
     let conn = this.connections.get(key)
 
@@ -139,7 +143,9 @@ class P2PService {
     }
 
     try {
-      conn.peer.signal(signal)
+      if (conn.peer) {
+        conn.peer.signal(signal)
+      }
     } catch (e) {
       console.warn('Signal error:', e)
     }
@@ -246,6 +252,22 @@ class P2PService {
     const key = chatId
     if (this.connections.has(key)) return
 
+    // Если WebRTC отключен, создаём виртуальное соединение для работы через signaling
+    if (!USE_WEBRTC) {
+      this.connections.set(key, {
+        peer: null,
+        peerId,
+        chatId,
+        connected: this.isSignalingConnected() // Считаем подключенным, если signaling работает
+      })
+      // Уведомляем о подключении через signaling
+      if (this.onConnectionCallback && this.isSignalingConnected()) {
+        this.onConnectionCallback(peerId, chatId)
+      }
+      return
+    }
+    
+    // Обычная логика для WebRTC
     if (this.ws?.readyState === WebSocket.OPEN) {
       const conn = this.createPeerConnection(key, peerId, chatId, true)
       this.connections.set(key, conn)
